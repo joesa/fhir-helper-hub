@@ -4,16 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Database, FileText, Plus, Calendar, UserCheck, Building, Briefcase, Hospital, Stethoscope, Activity } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { User, Database, FileText, Plus, UserCheck, Building, Briefcase, Hospital, Stethoscope, Activity } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { PatientFormData } from "@/types/patient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Icd10Mapping } from "./Icd10MappingUploader";
 import { CptMapping } from "./CptMappingUploader";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface PatientFormProps {
   onSubmit: (data: PatientFormData) => void;
@@ -166,36 +163,13 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
 
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth" className="required font-bold">Date of Birth *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full pl-10 justify-start text-left font-normal glass-input border-2 border-primary-400",
-                      !formData.dateOfBirth && "text-muted-foreground"
-                    )}
-                  >
-                    <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                    {formData.dateOfBirth ? (
-                      format(formData.dateOfBirth, "PPP")
-                    ) : (
-                      <span>Select date of birth</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={formData.dateOfBirth}
-                    onSelect={handleDateChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                date={formData.dateOfBirth}
+                onDateChange={handleDateChange}
+                placeholder="Select date of birth"
+                required
+                className="glass-input border-2 border-primary-400"
+              />
             </div>
 
             <div className="space-y-2">
