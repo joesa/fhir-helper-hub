@@ -21,10 +21,18 @@ const Index = () => {
     try {
       setIsLoading(true);
 
-      // Create Patient
+      // Construct full name from components
+      const fullName = [
+        formData.firstName,
+        formData.middleName,
+        formData.lastName
+      ].filter(Boolean).join(" ");
+
+      // Create Patient with name components and DOB
       const patient = await fhirService.createPatient(
-        formData.patientName,
-        formData.subscriberId
+        fullName,
+        formData.subscriberId,
+        formData.dateOfBirth
       );
 
       // Create Encounter

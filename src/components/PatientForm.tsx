@@ -1,15 +1,21 @@
 
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Database, FileText, Plus } from "lucide-react";
+import { User, Database, FileText, Plus, Calendar, UserCheck } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface PatientFormData {
-  patientName: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  dateOfBirth: Date | undefined;
   subscriberId: string;
   providerNpi: string;
   serviceLocation: string;
@@ -23,7 +29,10 @@ interface PatientFormProps {
 const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<PatientFormData>({
-    patientName: "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    dateOfBirth: undefined,
     subscriberId: "",
     providerNpi: "",
     serviceLocation: "",
@@ -34,9 +43,20 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleDateChange = (date: Date | undefined) => {
+    setFormData((prev) => ({ ...prev, dateOfBirth: date }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (Object.values(formData).some((value) => !value)) {
+    
+    // Check if all required fields except middle name are filled
+    const requiredFields = ['firstName', 'lastName', 'dateOfBirth', 'subscriberId', 'providerNpi', 'serviceLocation'];
+    const missingFields = requiredFields.filter(field => 
+      field === 'dateOfBirth' ? !formData[field as keyof PatientFormData] : !(formData[field as keyof PatientFormData] as string)
+    );
+    
+    if (missingFields.length > 0) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
@@ -44,6 +64,7 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
       });
       return;
     }
+    
     onSubmit(formData);
   };
 
@@ -59,23 +80,89 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName" className="required">First Name</Label>
+              <div className="relative">
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="pl-10 glass-input"
+                  placeholder="Enter first name"
+                />
+                <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="required">Last Name</Label>
+              <div className="relative">
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="pl-10 glass-input"
+                  placeholder="Enter last name"
+                />
+                <UserCheck className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="patientName">Patient Name</Label>
+            <Label htmlFor="middleName">Middle Name (Optional)</Label>
             <div className="relative">
               <Input
-                id="patientName"
-                name="patientName"
-                value={formData.patientName}
+                id="middleName"
+                name="middleName"
+                value={formData.middleName}
                 onChange={handleChange}
                 className="pl-10 glass-input"
-                placeholder="Enter patient name"
+                placeholder="Enter middle name (if any)"
               />
               <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subscriberId">Subscriber ID</Label>
+            <Label htmlFor="dateOfBirth" className="required">Date of Birth</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full pl-10 justify-start text-left font-normal glass-input",
+                    !formData.dateOfBirth && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  {formData.dateOfBirth ? (
+                    format(formData.dateOfBirth, "PPP")
+                  ) : (
+                    <span>Select date of birth</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={formData.dateOfBirth}
+                  onSelect={handleDateChange}
+                  disabled={(date) =>
+                    date > new Date() || date < new Date("1900-01-01")
+                  }
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="subscriberId" className="required">Subscriber ID</Label>
             <div className="relative">
               <Input
                 id="subscriberId"
@@ -90,7 +177,7 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="providerNpi">Provider NPI</Label>
+            <Label htmlFor="providerNpi" className="required">Provider NPI</Label>
             <div className="relative">
               <Input
                 id="providerNpi"
@@ -105,7 +192,7 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="serviceLocation">Service Location</Label>
+            <Label htmlFor="serviceLocation" className="required">Service Location</Label>
             <div className="relative">
               <Input
                 id="serviceLocation"

@@ -37,11 +37,21 @@ export class FhirService {
     return response.json();
   }
 
-  async createPatient(name: string, subscriberId: string) {
+  async createPatient(name: string, subscriberId: string, dateOfBirth?: Date) {
+    // Split the name into parts to identify given name(s) and family name
+    const nameParts = name.split(' ');
+    const familyName = nameParts.pop() || ''; // Last part is the family name
+    const givenNames = nameParts.length > 0 ? nameParts : [''];
+    
     const patient = {
       resourceType: "Patient",
-      name: [{ text: name }],
+      name: [{
+        use: "official",
+        family: familyName,
+        given: givenNames
+      }],
       identifier: [{ value: subscriberId }],
+      birthDate: dateOfBirth ? dateOfBirth.toISOString().slice(0, 10) : undefined, // Format as YYYY-MM-DD
     };
 
     return this.request("/Patient", {
