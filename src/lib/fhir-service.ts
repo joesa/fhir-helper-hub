@@ -22,17 +22,22 @@ export class FhirService {
   private fhirAccessToken?: string;
   private crdAccessToken?: string;
 
-  constructor(config: FhirServiceConfig) {
-    this.fhirEndpoint = config.fhirEndpoint;
-    this.crdEndpoint = config.crdEndpoint;
-    this.fhirAccessToken = config.fhirAccessToken;
-    this.crdAccessToken = config.crdAccessToken;
+  constructor(serviceConfig: FhirServiceConfig) {
+    this.fhirEndpoint = serviceConfig.fhirEndpoint;
+    this.crdEndpoint = serviceConfig.crdEndpoint;
+    this.fhirAccessToken = serviceConfig.fhirAccessToken;
+    this.crdAccessToken = serviceConfig.crdAccessToken;
   }
 
   private async request(path: string, options: RequestInit = {}) {
-    const headers: Record<string, string> = {
+    const defaultHeaders = {
       "Content-Type": "application/fhir+json",
-      ...options.headers,
+    };
+    
+    // Merge headers properly
+    const headers: Record<string, string> = {
+      ...defaultHeaders,
+      ...(options.headers as Record<string, string> || {})
     };
 
     // Add authorization header if access token is available
@@ -200,11 +205,20 @@ export class FhirService {
   }
 }
 
-export const createFhirService = (config: FhirServiceConfig = {
-  fhirEndpoint: config.FHIR_ENDPOINT,
-  crdEndpoint: config.CRD_ENDPOINT,
-  fhirAccessToken: config.FHIR_ACCESS_TOKEN,
-  crdAccessToken: config.CRD_ACCESS_TOKEN,
-}) => {
-  return new FhirService(config);
+export const createFhirService = (serviceConfig?: Partial<FhirServiceConfig>) => {
+  // Map the app config to service config format
+  const defaultConfig: FhirServiceConfig = {
+    fhirEndpoint: config.FHIR_ENDPOINT,
+    crdEndpoint: config.CRD_ENDPOINT,
+    fhirAccessToken: config.FHIR_ACCESS_TOKEN,
+    crdAccessToken: config.CRD_ACCESS_TOKEN,
+  };
+  
+  // Merge with any provided configs
+  const mergedConfig: FhirServiceConfig = {
+    ...defaultConfig,
+    ...serviceConfig,
+  };
+  
+  return new FhirService(mergedConfig);
 };
