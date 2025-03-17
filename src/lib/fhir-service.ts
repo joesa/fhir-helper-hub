@@ -1,7 +1,11 @@
 
+import { config } from "./config";
+
 interface FhirServiceConfig {
   fhirEndpoint: string;
   crdEndpoint: string;
+  fhirAccessToken?: string;
+  crdAccessToken?: string;
 }
 
 interface ServiceRequestPayload {
@@ -15,19 +19,30 @@ interface ServiceRequestPayload {
 export class FhirService {
   private fhirEndpoint: string;
   private crdEndpoint: string;
+  private fhirAccessToken?: string;
+  private crdAccessToken?: string;
 
   constructor(config: FhirServiceConfig) {
     this.fhirEndpoint = config.fhirEndpoint;
     this.crdEndpoint = config.crdEndpoint;
+    this.fhirAccessToken = config.fhirAccessToken;
+    this.crdAccessToken = config.crdAccessToken;
   }
 
   private async request(path: string, options: RequestInit = {}) {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/fhir+json",
+      ...options.headers,
+    };
+
+    // Add authorization header if access token is available
+    if (this.fhirAccessToken) {
+      headers["Authorization"] = `Bearer ${this.fhirAccessToken}`;
+    }
+
     const response = await fetch(`${this.fhirEndpoint}${path}`, {
       ...options,
-      headers: {
-        "Content-Type": "application/fhir+json",
-        ...options.headers,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -162,11 +177,18 @@ export class FhirService {
       prefetch,
     };
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    // Add authorization header if CRD access token is available
+    if (this.crdAccessToken) {
+      headers["Authorization"] = `Bearer ${this.crdAccessToken}`;
+    }
+
     const response = await fetch(this.crdEndpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(hook),
     });
 
@@ -178,6 +200,11 @@ export class FhirService {
   }
 }
 
-export const createFhirService = (config: FhirServiceConfig) => {
+export const createFhirService = (config: FhirServiceConfig = {
+  fhirEndpoint: config.FHIR_ENDPOINT,
+  crdEndpoint: config.CRD_ENDPOINT,
+  fhirAccessToken: config.FHIR_ACCESS_TOKEN,
+  crdAccessToken: config.CRD_ACCESS_TOKEN,
+}) => {
   return new FhirService(config);
 };

@@ -4,18 +4,18 @@ import PatientForm from "@/components/PatientForm";
 import ResponseViewer from "@/components/ResponseViewer";
 import AnimatedContainer from "@/components/AnimatedContainer";
 import Hero from "@/components/Hero";
+import ConfigurationPanel from "@/components/ConfigurationPanel";
 import { useToast } from "@/hooks/use-toast";
 import { createFhirService } from "@/lib/fhir-service";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [crdResponse, setCrdResponse] = useState<any>(null);
 
-  const fhirService = createFhirService({
-    fhirEndpoint: "https://your-fhir-server-url",
-    crdEndpoint: "https://your-crd-server-url",
-  });
+  // Create FHIR service with config - this will now use the values from config.ts
+  const fhirService = createFhirService();
 
   const handleSubmit = async (formData: any) => {
     try {
@@ -94,16 +94,27 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid gap-8">
-            <PatientForm onSubmit={handleSubmit} isLoading={isLoading} />
+          <Tabs defaultValue="form" className="w-full">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+              <TabsTrigger value="form">Service Request</TabsTrigger>
+              <TabsTrigger value="config">Configuration</TabsTrigger>
+            </TabsList>
+            <TabsContent value="form" className="mt-6">
+              <div className="grid gap-8">
+                <PatientForm onSubmit={handleSubmit} isLoading={isLoading} />
 
-            {crdResponse && (
-              <ResponseViewer
-                response={crdResponse}
-                title="CRD Order Sign Response"
-              />
-            )}
-          </div>
+                {crdResponse && (
+                  <ResponseViewer
+                    response={crdResponse}
+                    title="CRD Order Sign Response"
+                  />
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="config" className="mt-6">
+              <ConfigurationPanel />
+            </TabsContent>
+          </Tabs>
         </AnimatedContainer>
       </div>
     </>
