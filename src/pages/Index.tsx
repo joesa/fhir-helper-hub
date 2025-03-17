@@ -53,6 +53,7 @@ const Index = () => {
         encounterId: encounter.id,
         conditionId: condition.id,
         providerId: formData.providerNpi,
+        providerName: formData.providerName,
         location: formData.serviceLocation,
       });
 

@@ -13,6 +13,7 @@ interface ServiceRequestPayload {
   encounterId: string;
   conditionId: string;
   providerId: string;
+  providerName: string;
   location: string;
 }
 
@@ -151,6 +152,7 @@ export class FhirService {
       performer: [
         {
           reference: `Practitioner/${payload.providerId}`,
+          display: payload.providerName
         },
       ],
       locationReference: {
