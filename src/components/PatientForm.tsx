@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -13,15 +12,17 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PatientFormData } from "@/types/patient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CodeMapping } from "./CodeMappingUploader";
+import { Icd10Mapping } from "./Icd10MappingUploader";
+import { CptMapping } from "./CptMappingUploader";
 
 interface PatientFormProps {
   onSubmit: (data: PatientFormData) => void;
   isLoading?: boolean;
-  codeMappings?: CodeMapping[];
+  icd10Mappings?: Icd10Mapping[];
+  cptMappings?: CptMapping[];
 }
 
-const PatientForm = ({ onSubmit, isLoading, codeMappings = [] }: PatientFormProps) => {
+const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = [] }: PatientFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<PatientFormData>({
     firstName: "",
@@ -95,10 +96,6 @@ const PatientForm = ({ onSubmit, isLoading, codeMappings = [] }: PatientFormProp
     
     onSubmit(formData);
   };
-
-  // Filter code mappings by type
-  const icd10Codes = codeMappings.filter(m => m.type === "ICD10");
-  const cptCodes = codeMappings.filter(m => m.type === "CPT");
 
   return (
     <Card className="w-full max-w-md mx-auto glass-panel">
@@ -219,7 +216,7 @@ const PatientForm = ({ onSubmit, isLoading, codeMappings = [] }: PatientFormProp
 
             <div className="space-y-2">
               <Label htmlFor="diagnosisCode" className="required font-bold">Diagnosis Code (ICD-10) *</Label>
-              {icd10Codes.length > 0 ? (
+              {icd10Mappings.length > 0 ? (
                 <Select
                   value={formData.diagnosisCode}
                   onValueChange={(value) => handleSelectChange("diagnosisCode", value)}
@@ -229,7 +226,7 @@ const PatientForm = ({ onSubmit, isLoading, codeMappings = [] }: PatientFormProp
                     <SelectValue placeholder="Select diagnosis code" />
                   </SelectTrigger>
                   <SelectContent>
-                    {icd10Codes.map((code) => (
+                    {icd10Mappings.map((code) => (
                       <SelectItem key={code.code} value={code.code}>
                         {code.code} - {code.description}
                       </SelectItem>
@@ -307,7 +304,7 @@ const PatientForm = ({ onSubmit, isLoading, codeMappings = [] }: PatientFormProp
 
             <div className="space-y-2">
               <Label htmlFor="cptCode" className="required font-bold">Procedure Code (CPT) *</Label>
-              {cptCodes.length > 0 ? (
+              {cptMappings.length > 0 ? (
                 <Select
                   value={formData.cptCode}
                   onValueChange={(value) => handleSelectChange("cptCode", value)}
@@ -317,7 +314,7 @@ const PatientForm = ({ onSubmit, isLoading, codeMappings = [] }: PatientFormProp
                     <SelectValue placeholder="Select procedure code" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cptCodes.map((code) => (
+                    {cptMappings.map((code) => (
                       <SelectItem key={code.code} value={code.code}>
                         {code.code} - {code.description}
                       </SelectItem>

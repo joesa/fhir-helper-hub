@@ -9,41 +9,36 @@ import { FileSpreadsheet, Download, Table as TableIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 
-export interface CodeMapping {
+export interface Icd10Mapping {
   code: string;
   description: string;
-  type: "ICD10" | "CPT";
 }
 
-interface CodeMappingProps {
-  onMappingsLoaded: (mappings: CodeMapping[]) => void;
+interface Icd10MappingProps {
+  onMappingsLoaded: (mappings: Icd10Mapping[]) => void;
 }
 
-const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) => {
+const Icd10MappingUploader: React.FC<Icd10MappingProps> = ({ onMappingsLoaded }) => {
   const { toast } = useToast();
-  const [mappings, setMappings] = useState<CodeMapping[]>([]);
+  const [mappings, setMappings] = useState<Icd10Mapping[]>([]);
 
   // Example data for the format display
-  const exampleData: CodeMapping[] = [
+  const exampleData: Icd10Mapping[] = [
     {
       code: "J45.909",
-      description: "Asthma, unspecified",
-      type: "ICD10"
+      description: "Asthma, unspecified"
     },
     {
       code: "E11.9",
-      description: "Type 2 diabetes mellitus without complications",
-      type: "ICD10"
+      description: "Type 2 diabetes mellitus without complications"
     },
     {
-      code: "99213",
-      description: "Office or other outpatient visit",
-      type: "CPT"
+      code: "I10",
+      description: "Essential (primary) hypertension"
     },
     {
-      code: "93000",
-      description: "Electrocardiogram, routine",
-      type: "CPT"
+      code: "F41.9",
+      description: "Anxiety disorder, unspecified"
     }
   ];
 
@@ -60,19 +55,18 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
         const worksheet = workbook.Sheets[sheetName];
         const json = XLSX.utils.sheet_to_json<any>(worksheet);
         
-        // Transform the Excel data to match CodeMapping
+        // Transform the Excel data to match Icd10Mapping
         const formattedData = json.map((row: any) => ({
           code: row.code || "",
           description: row.description || "",
-          type: row.type || "ICD10",
         }));
         
         setMappings(formattedData);
         onMappingsLoaded(formattedData);
         
         toast({
-          title: "Code Mappings Loaded",
-          description: `Loaded ${formattedData.length} code mappings`,
+          title: "ICD-10 Codes Loaded",
+          description: `Loaded ${formattedData.length} ICD-10 codes`,
         });
       } catch (error) {
         console.error("Error parsing Excel file:", error);
@@ -87,40 +81,17 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
   };
 
   const downloadTemplate = () => {
-    const exampleData = [
-      {
-        code: "J45.909",
-        description: "Asthma, unspecified",
-        type: "ICD10"
-      },
-      {
-        code: "E11.9",
-        description: "Type 2 diabetes mellitus without complications",
-        type: "ICD10"
-      },
-      {
-        code: "99213",
-        description: "Office or other outpatient visit",
-        type: "CPT"
-      },
-      {
-        code: "93000",
-        description: "Electrocardiogram, routine",
-        type: "CPT"
-      }
-    ];
-    
     const worksheet = XLSX.utils.json_to_sheet(exampleData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Code Mappings");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "ICD-10 Codes");
     
-    XLSX.writeFile(workbook, "code_mappings_template.xlsx");
+    XLSX.writeFile(workbook, "icd10_codes_template.xlsx");
   };
 
   return (
     <Card className="w-full glass-panel">
       <CardHeader className="flex flex-row items-center justify-between py-4">
-        <CardTitle className="text-lg font-medium">Code Mappings</CardTitle>
+        <CardTitle className="text-lg font-medium">ICD-10 Diagnosis Codes</CardTitle>
         <Button 
           variant="outline" 
           size="sm" 
@@ -135,7 +106,7 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Input
-              id="mapping-upload"
+              id="icd10-upload"
               type="file"
               accept=".xlsx, .xls"
               onChange={handleFileUpload}
@@ -149,7 +120,7 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
         <div className="bg-muted/30 p-4 rounded-md border border-dashed">
           <div className="flex items-center gap-2 mb-3">
             <TableIcon className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-medium">Expected File Format</h3>
+            <h3 className="text-sm font-medium">Expected ICD-10 File Format</h3>
           </div>
           <div className="rounded-md border overflow-hidden">
             <Table>
@@ -157,7 +128,6 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
                 <TableRow>
                   <TableHead>code</TableHead>
                   <TableHead>description</TableHead>
-                  <TableHead>type</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -165,7 +135,6 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
                   <TableRow key={index}>
                     <TableCell>{row.code}</TableCell>
                     <TableCell>{row.description}</TableCell>
-                    <TableCell>{row.type}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -180,7 +149,6 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Type</TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Description</TableHead>
                 </TableRow>
@@ -188,14 +156,13 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
               <TableBody>
                 {mappings.slice(0, 5).map((row, index) => (
                   <TableRow key={index}>
-                    <TableCell>{row.type}</TableCell>
                     <TableCell>{row.code}</TableCell>
                     <TableCell>{row.description}</TableCell>
                   </TableRow>
                 ))}
                 {mappings.length > 5 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                    <TableCell colSpan={2} className="text-center text-muted-foreground">
                       And {mappings.length - 5} more...
                     </TableCell>
                   </TableRow>
@@ -209,4 +176,4 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
   );
 };
 
-export default CodeMappingUploader;
+export default Icd10MappingUploader;

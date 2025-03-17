@@ -7,7 +7,8 @@ import Hero from "@/components/Hero";
 import ConfigurationPanel from "@/components/ConfigurationPanel";
 import ExcelUploader from "@/components/ExcelUploader";
 import BulkResponseViewer from "@/components/BulkResponseViewer";
-import CodeMappingUploader, { CodeMapping } from "@/components/CodeMappingUploader";
+import Icd10MappingUploader, { Icd10Mapping } from "@/components/Icd10MappingUploader";
+import CptMappingUploader, { CptMapping } from "@/components/CptMappingUploader";
 import { useToast } from "@/hooks/use-toast";
 import { createFhirService } from "@/lib/fhir-service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,13 +27,18 @@ const Index = () => {
   const [crdResponse, setCrdResponse] = useState<any>(null);
   const [bulkResponses, setBulkResponses] = useState<ProcessedResponse[]>([]);
   const [activeTab, setActiveTab] = useState<string>("form");
-  const [codeMappings, setCodeMappings] = useState<CodeMapping[]>([]);
+  const [icd10Mappings, setIcd10Mappings] = useState<Icd10Mapping[]>([]);
+  const [cptMappings, setCptMappings] = useState<CptMapping[]>([]);
 
   // Create FHIR service with config - this will now use the values from config.ts
   const fhirService = createFhirService();
 
-  const handleCodeMappingsLoaded = (mappings: CodeMapping[]) => {
-    setCodeMappings(mappings);
+  const handleIcd10MappingsLoaded = (mappings: Icd10Mapping[]) => {
+    setIcd10Mappings(mappings);
+  };
+
+  const handleCptMappingsLoaded = (mappings: CptMapping[]) => {
+    setCptMappings(mappings);
   };
 
   const processServiceRequest = async (formData: PatientFormData) => {
@@ -186,10 +192,11 @@ const Index = () => {
             className="w-full"
           >
             <div className="flex justify-center mb-4">
-              <TabsList className="w-full max-w-3xl grid-cols-5 grid gap-1">
+              <TabsList className="w-full max-w-3xl grid-cols-6 grid gap-1">
                 <TabsTrigger value="form" className="px-4 py-2">Single Request</TabsTrigger>
                 <TabsTrigger value="excel" className="px-4 py-2">Excel Upload</TabsTrigger>
-                <TabsTrigger value="mappings" className="px-4 py-2">Code Mappings</TabsTrigger>
+                <TabsTrigger value="icd10" className="px-4 py-2">ICD-10 Codes</TabsTrigger>
+                <TabsTrigger value="cpt" className="px-4 py-2">CPT Codes</TabsTrigger>
                 <TabsTrigger value="bulk" className="px-4 py-2">Bulk Results</TabsTrigger>
                 <TabsTrigger value="config" className="px-4 py-2">Configuration</TabsTrigger>
               </TabsList>
@@ -200,7 +207,8 @@ const Index = () => {
                 <PatientForm 
                   onSubmit={handleSingleSubmit} 
                   isLoading={isLoading} 
-                  codeMappings={codeMappings}
+                  icd10Mappings={icd10Mappings}
+                  cptMappings={cptMappings}
                 />
 
                 {crdResponse && (
@@ -216,8 +224,12 @@ const Index = () => {
               <ExcelUploader onProcess={handleBulkSubmit} isLoading={isLoading} />
             </TabsContent>
 
-            <TabsContent value="mappings" className="mt-6">
-              <CodeMappingUploader onMappingsLoaded={handleCodeMappingsLoaded} />
+            <TabsContent value="icd10" className="mt-6">
+              <Icd10MappingUploader onMappingsLoaded={handleIcd10MappingsLoaded} />
+            </TabsContent>
+
+            <TabsContent value="cpt" className="mt-6">
+              <CptMappingUploader onMappingsLoaded={handleCptMappingsLoaded} />
             </TabsContent>
 
             <TabsContent value="bulk" className="mt-6">
