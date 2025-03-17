@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -11,17 +10,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-
-interface PatientFormData {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  dateOfBirth: Date | undefined;
-  subscriberId: string;
-  providerNpi: string;
-  providerName: string;
-  serviceLocation: string;
-}
+import { PatientFormData } from "@/types/patient";
 
 interface PatientFormProps {
   onSubmit: (data: PatientFormData) => void;
@@ -53,7 +42,6 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if all required fields except middle name are filled
     const requiredFields = ['firstName', 'lastName', 'dateOfBirth', 'subscriberId', 'providerNpi', 'providerName', 'serviceLocation'];
     const missingFields = requiredFields.filter(field => 
       field === 'dateOfBirth' ? !formData[field as keyof PatientFormData] : !(formData[field as keyof PatientFormData] as string)
@@ -83,7 +71,6 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Patient Information Section */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <Hospital className="h-5 w-5 text-primary" />
@@ -188,7 +175,6 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
             </div>
           </div>
 
-          {/* Provider Information Section */}
           <div className="pt-2 space-y-4">
             <div className="flex items-center space-x-2">
               <Briefcase className="h-5 w-5 text-primary" />
@@ -263,3 +249,4 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
 };
 
 export default PatientForm;
+
