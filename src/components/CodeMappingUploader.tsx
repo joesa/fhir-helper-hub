@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileSpreadsheet, Download } from "lucide-react";
+import { FileSpreadsheet, Download, Table as TableIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
 
 export interface CodeMapping {
   code: string;
@@ -21,6 +22,30 @@ interface CodeMappingProps {
 const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) => {
   const { toast } = useToast();
   const [mappings, setMappings] = useState<CodeMapping[]>([]);
+
+  // Example data for the format display
+  const exampleData: CodeMapping[] = [
+    {
+      code: "J45.909",
+      description: "Asthma, unspecified",
+      type: "ICD10"
+    },
+    {
+      code: "E11.9",
+      description: "Type 2 diabetes mellitus without complications",
+      type: "ICD10"
+    },
+    {
+      code: "99213",
+      description: "Office or other outpatient visit",
+      type: "CPT"
+    },
+    {
+      code: "93000",
+      description: "Electrocardiogram, routine",
+      type: "CPT"
+    }
+  ];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,6 +144,36 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
             <FileSpreadsheet className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
         </div>
+        
+        {/* Example File Format Section */}
+        <div className="bg-muted/30 p-4 rounded-md border border-dashed">
+          <div className="flex items-center gap-2 mb-3">
+            <TableIcon className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-medium">Expected File Format</h3>
+          </div>
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>code</TableHead>
+                  <TableHead>description</TableHead>
+                  <TableHead>type</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {exampleData.map((row, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{row.code}</TableCell>
+                    <TableCell>{row.description}</TableCell>
+                    <TableCell>{row.type}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+        
+        <Separator className="my-4" />
         
         {mappings.length > 0 && (
           <div className="rounded-md border">

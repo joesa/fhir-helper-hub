@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileSpreadsheet, Download, Upload } from "lucide-react";
+import { FileSpreadsheet, Download, Upload, Table as TableIcon } from "lucide-react";
 import { PatientFormData } from "@/types/patient";
 import { format } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 
 interface ExcelUploaderProps {
   onProcess: (selectedData: PatientFormData[]) => void;
@@ -18,6 +19,34 @@ interface ExcelUploaderProps {
 const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
   const [excelData, setExcelData] = useState<PatientFormData[]>([]);
   const [selectedRows, setSelectedRows] = useState<Record<number, boolean>>({});
+  
+  // Example data for the format display
+  const exampleData = [
+    {
+      firstName: "John",
+      middleName: "",
+      lastName: "Doe",
+      dateOfBirth: "1990-01-01",
+      subscriberId: "SUB12345",
+      providerNpi: "1234567890",
+      providerName: "Dr. Smith Medical Group",
+      serviceLocation: "Main Hospital",
+      diagnosisCode: "J45.909",
+      cptCode: "99213"
+    },
+    {
+      firstName: "Jane",
+      middleName: "M",
+      lastName: "Smith",
+      dateOfBirth: "1985-05-15",
+      subscriberId: "SUB67890",
+      providerNpi: "0987654321",
+      providerName: "City Medical Center",
+      serviceLocation: "Downtown Clinic",
+      diagnosisCode: "E11.9",
+      cptCode: "93000"
+    }
+  ];
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -164,7 +193,7 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
               type="file"
               accept=".xlsx, .xls"
               onChange={handleFileUpload}
-              className="glass-input"
+              className="glass-input pl-10"
             />
             <FileSpreadsheet className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
@@ -177,6 +206,50 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
             Process Selected
           </Button>
         </div>
+        
+        {/* Example File Format Section */}
+        <div className="bg-muted/30 p-4 rounded-md border border-dashed">
+          <div className="flex items-center gap-2 mb-3">
+            <TableIcon className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-medium">Expected File Format</h3>
+          </div>
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>firstName</TableHead>
+                  <TableHead>middleName</TableHead>
+                  <TableHead>lastName</TableHead>
+                  <TableHead>dateOfBirth</TableHead>
+                  <TableHead>subscriberId</TableHead>
+                  <TableHead>providerNpi</TableHead>
+                  <TableHead>providerName</TableHead>
+                  <TableHead>serviceLocation</TableHead>
+                  <TableHead>diagnosisCode</TableHead>
+                  <TableHead>cptCode</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {exampleData.map((row, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{row.firstName}</TableCell>
+                    <TableCell>{row.middleName}</TableCell>
+                    <TableCell>{row.lastName}</TableCell>
+                    <TableCell>{row.dateOfBirth}</TableCell>
+                    <TableCell>{row.subscriberId}</TableCell>
+                    <TableCell>{row.providerNpi}</TableCell>
+                    <TableCell>{row.providerName}</TableCell>
+                    <TableCell>{row.serviceLocation}</TableCell>
+                    <TableCell>{row.diagnosisCode}</TableCell>
+                    <TableCell>{row.cptCode}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+        
+        <Separator className="my-4" />
         
         {excelData.length > 0 && (
           <div className="rounded-md border">
