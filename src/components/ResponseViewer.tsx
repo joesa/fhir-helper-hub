@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import AnimatedContainer from "./AnimatedContainer";
+import { cn } from "@/lib/utils";
 
 interface ResponseViewerProps {
   response: any;
