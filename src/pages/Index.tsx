@@ -185,13 +185,15 @@ const Index = () => {
             onValueChange={setActiveTab} 
             className="w-full"
           >
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-5">
-              <TabsTrigger value="form">Single Request</TabsTrigger>
-              <TabsTrigger value="excel">Excel Upload</TabsTrigger>
-              <TabsTrigger value="mappings">Code Mappings</TabsTrigger>
-              <TabsTrigger value="bulk">Bulk Results</TabsTrigger>
-              <TabsTrigger value="config">Configuration</TabsTrigger>
-            </TabsList>
+            <div className="flex justify-center mb-4">
+              <TabsList className="w-full max-w-3xl grid-cols-5 grid gap-1">
+                <TabsTrigger value="form" className="px-4 py-2">Single Request</TabsTrigger>
+                <TabsTrigger value="excel" className="px-4 py-2">Excel Upload</TabsTrigger>
+                <TabsTrigger value="mappings" className="px-4 py-2">Code Mappings</TabsTrigger>
+                <TabsTrigger value="bulk" className="px-4 py-2">Bulk Results</TabsTrigger>
+                <TabsTrigger value="config" className="px-4 py-2">Configuration</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="form" className="mt-6">
               <div className="grid gap-8">

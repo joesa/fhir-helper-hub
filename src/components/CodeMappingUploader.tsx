@@ -114,7 +114,7 @@ const CodeMappingUploader: React.FC<CodeMappingProps> = ({ onMappingsLoaded }) =
               type="file"
               accept=".xlsx, .xls"
               onChange={handleFileUpload}
-              className="glass-input"
+              className="glass-input pl-10"
             />
             <FileSpreadsheet className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
