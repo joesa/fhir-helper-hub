@@ -1,12 +1,99 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from "react";
+import PatientForm from "@/components/PatientForm";
+import ResponseViewer from "@/components/ResponseViewer";
+import AnimatedContainer from "@/components/AnimatedContainer";
+import { useToast } from "@/hooks/use-toast";
+import { createFhirService } from "@/lib/fhir-service";
 
 const Index = () => {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [crdResponse, setCrdResponse] = useState<any>(null);
+
+  const fhirService = createFhirService({
+    fhirEndpoint: "https://your-fhir-server-url",
+    crdEndpoint: "https://your-crd-server-url",
+  });
+
+  const handleSubmit = async (formData: any) => {
+    try {
+      setIsLoading(true);
+
+      // Create Patient
+      const patient = await fhirService.createPatient(
+        formData.patientName,
+        formData.subscriberId
+      );
+
+      // Create Encounter
+      const encounter = await fhirService.createEncounter(
+        patient.id,
+        formData.serviceLocation
+      );
+
+      // Create Condition
+      const condition = await fhirService.createCondition(
+        patient.id,
+        encounter.id
+      );
+
+      // Create ServiceRequest
+      const serviceRequest = await fhirService.createServiceRequest({
+        patientId: patient.id,
+        encounterId: encounter.id,
+        conditionId: condition.id,
+        providerId: formData.providerNpi,
+        location: formData.serviceLocation,
+      });
+
+      // Create CRD Order Sign
+      const response = await fhirService.createCrdOrderSign(
+        serviceRequest,
+        patient,
+        condition
+      );
+
+      setCrdResponse(response);
+      toast({
+        title: "Success",
+        description: "Service request created successfully",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to process request",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+      <AnimatedContainer className="max-w-7xl mx-auto space-y-8">
+        <header className="text-center space-y-4">
+          <h1 className="text-4xl font-semibold tracking-tight">
+            FHIR Helper Hub
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Streamline your healthcare service requests with our FHIR-compliant system
+          </p>
+        </header>
+
+        <div className="grid gap-8">
+          <PatientForm onSubmit={handleSubmit} isLoading={isLoading} />
+
+          {crdResponse && (
+            <ResponseViewer
+              response={crdResponse}
+              title="CRD Order Sign Response"
+            />
+          )}
+        </div>
+      </AnimatedContainer>
     </div>
   );
 };
