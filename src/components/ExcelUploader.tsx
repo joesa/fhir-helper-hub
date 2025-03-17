@@ -61,6 +61,8 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
             providerNpi: row.providerNpi || "",
             providerName: row.providerName || "",
             serviceLocation: row.serviceLocation || "",
+            diagnosisCode: row.diagnosisCode || "",
+            cptCode: row.cptCode || "",
           };
         });
         
@@ -115,7 +117,9 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
         subscriberId: "SUB12345",
         providerNpi: "1234567890",
         providerName: "Dr. Smith Medical Group",
-        serviceLocation: "Main Hospital"
+        serviceLocation: "Main Hospital",
+        diagnosisCode: "J45.909",
+        cptCode: "99213"
       },
       {
         firstName: "Jane",
@@ -125,7 +129,9 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
         subscriberId: "SUB67890",
         providerNpi: "0987654321",
         providerName: "City Medical Center",
-        serviceLocation: "Downtown Clinic"
+        serviceLocation: "Downtown Clinic",
+        diagnosisCode: "E11.9",
+        cptCode: "93000"
       }
     ];
     
@@ -188,6 +194,7 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
                   <TableHead>Date of Birth</TableHead>
                   <TableHead>Subscriber ID</TableHead>
                   <TableHead>Provider Info</TableHead>
+                  <TableHead>Codes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -209,6 +216,7 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
                     </TableCell>
                     <TableCell>{row.subscriberId}</TableCell>
                     <TableCell>{row.providerName} ({row.providerNpi})</TableCell>
+                    <TableCell>ICD: {row.diagnosisCode}, CPT: {row.cptCode}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

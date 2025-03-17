@@ -8,4 +8,6 @@ export interface PatientFormData {
   providerNpi: string;
   providerName: string;
   serviceLocation: string;
+  diagnosisCode: string;
+  cptCode: string;
 }

@@ -5,20 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Database, FileText, Plus, Calendar, UserCheck, Building, Briefcase, Hospital } from "lucide-react";
+import { User, Database, FileText, Plus, Calendar, UserCheck, Building, Briefcase, Hospital, Stethoscope, Activity } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PatientFormData } from "@/types/patient";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CodeMapping } from "./CodeMappingUploader";
 
 interface PatientFormProps {
   onSubmit: (data: PatientFormData) => void;
   isLoading?: boolean;
+  codeMappings?: CodeMapping[];
 }
 
-const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
+const PatientForm = ({ onSubmit, isLoading, codeMappings = [] }: PatientFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<PatientFormData>({
     firstName: "",
@@ -29,10 +32,16 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
     providerNpi: "",
     providerName: "",
     serviceLocation: "",
+    diagnosisCode: "",
+    cptCode: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -44,7 +53,7 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
     e.preventDefault();
     
     // Check specifically for the mandatory fields we're enforcing
-    const mandatoryFields = ['lastName', 'dateOfBirth', 'subscriberId'];
+    const mandatoryFields = ['lastName', 'dateOfBirth', 'subscriberId', 'diagnosisCode', 'cptCode'];
     const missingFields = mandatoryFields.filter(field => 
       field === 'dateOfBirth' ? !formData[field as keyof PatientFormData] : !(formData[field as keyof PatientFormData] as string)
     );
@@ -54,7 +63,9 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
       const fieldLabels = {
         lastName: 'Last Name',
         dateOfBirth: 'Date of Birth',
-        subscriberId: 'Subscriber ID'
+        subscriberId: 'Subscriber ID',
+        diagnosisCode: 'Diagnosis Code (ICD-10)',
+        cptCode: 'Procedure Code (CPT)'
       };
       
       const missingFieldLabels = missingFields.map(field => fieldLabels[field as keyof typeof fieldLabels]);
@@ -84,6 +95,10 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
     
     onSubmit(formData);
   };
+
+  // Filter code mappings by type
+  const icd10Codes = codeMappings.filter(m => m.type === "ICD10");
+  const cptCodes = codeMappings.filter(m => m.type === "CPT");
 
   return (
     <Card className="w-full max-w-md mx-auto glass-panel">
@@ -201,6 +216,41 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
                 <Database className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="diagnosisCode" className="required font-bold">Diagnosis Code (ICD-10) *</Label>
+              {icd10Codes.length > 0 ? (
+                <Select
+                  value={formData.diagnosisCode}
+                  onValueChange={(value) => handleSelectChange("diagnosisCode", value)}
+                >
+                  <SelectTrigger className="pl-10 glass-input border-2 border-primary-400">
+                    <Stethoscope className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <SelectValue placeholder="Select diagnosis code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {icd10Codes.map((code) => (
+                      <SelectItem key={code.code} value={code.code}>
+                        {code.code} - {code.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="relative">
+                  <Input
+                    id="diagnosisCode"
+                    name="diagnosisCode"
+                    value={formData.diagnosisCode}
+                    onChange={handleChange}
+                    className="pl-10 glass-input border-2 border-primary-400"
+                    placeholder="Enter ICD-10 code"
+                    required
+                  />
+                  <Stethoscope className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="pt-2 space-y-4">
@@ -254,6 +304,41 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
                 <Plus className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cptCode" className="required font-bold">Procedure Code (CPT) *</Label>
+              {cptCodes.length > 0 ? (
+                <Select
+                  value={formData.cptCode}
+                  onValueChange={(value) => handleSelectChange("cptCode", value)}
+                >
+                  <SelectTrigger className="pl-10 glass-input border-2 border-primary-400">
+                    <Activity className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <SelectValue placeholder="Select procedure code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cptCodes.map((code) => (
+                      <SelectItem key={code.code} value={code.code}>
+                        {code.code} - {code.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="relative">
+                  <Input
+                    id="cptCode"
+                    name="cptCode"
+                    value={formData.cptCode}
+                    onChange={handleChange}
+                    className="pl-10 glass-input border-2 border-primary-400"
+                    placeholder="Enter CPT code"
+                    required
+                  />
+                  <Activity className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                </div>
+              )}
+            </div>
           </div>
 
           <Button
@@ -277,4 +362,3 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
 };
 
 export default PatientForm;
-

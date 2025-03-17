@@ -1,4 +1,3 @@
-
 import { config } from "./config";
 
 interface FhirServiceConfig {
@@ -15,6 +14,8 @@ interface ServiceRequestPayload {
   providerId: string;
   providerName: string;
   location: string;
+  diagnosisCode?: string;
+  cptCode?: string;
 }
 
 export class FhirService {
@@ -35,13 +36,11 @@ export class FhirService {
       "Content-Type": "application/fhir+json",
     };
     
-    // Merge headers properly
     const headers: Record<string, string> = {
       ...defaultHeaders,
       ...(options.headers as Record<string, string> || {})
     };
 
-    // Add authorization header if access token is available
     if (this.fhirAccessToken) {
       headers["Authorization"] = `Bearer ${this.fhirAccessToken}`;
     }
@@ -59,9 +58,8 @@ export class FhirService {
   }
 
   async createPatient(name: string, subscriberId: string, dateOfBirth?: Date) {
-    // Split the name into parts to identify given name(s) and family name
     const nameParts = name.split(' ');
-    const familyName = nameParts.pop() || ''; // Last part is the family name
+    const familyName = nameParts.pop() || '';
     const givenNames = nameParts.length > 0 ? nameParts : [''];
     
     const patient = {
@@ -72,7 +70,7 @@ export class FhirService {
         given: givenNames
       }],
       identifier: [{ value: subscriberId }],
-      birthDate: dateOfBirth ? dateOfBirth.toISOString().slice(0, 10) : undefined, // Format as YYYY-MM-DD
+      birthDate: dateOfBirth ? dateOfBirth.toISOString().slice(0, 10) : undefined,
     };
 
     return this.request("/Patient", {
@@ -108,7 +106,7 @@ export class FhirService {
     });
   }
 
-  async createCondition(patientId: string, encounterId: string) {
+  async createCondition(patientId: string, encounterId: string, diagnosisCode?: string) {
     const condition = {
       resourceType: "Condition",
       clinicalStatus: {
@@ -125,6 +123,16 @@ export class FhirService {
       encounter: {
         reference: `Encounter/${encounterId}`,
       },
+      ...(diagnosisCode && {
+        code: {
+          coding: [
+            {
+              system: "http://hl7.org/fhir/sid/icd-10-cm",
+              code: diagnosisCode,
+            },
+          ],
+        },
+      }),
     };
 
     return this.request("/Condition", {
@@ -158,6 +166,16 @@ export class FhirService {
       locationReference: {
         display: payload.location,
       },
+      ...(payload.cptCode && {
+        code: {
+          coding: [
+            {
+              system: "http://www.ama-assn.org/go/cpt",
+              code: payload.cptCode,
+            },
+          ],
+        },
+      }),
     };
 
     return this.request("/ServiceRequest", {
@@ -188,7 +206,6 @@ export class FhirService {
       "Content-Type": "application/json",
     };
 
-    // Add authorization header if CRD access token is available
     if (this.crdAccessToken) {
       headers["Authorization"] = `Bearer ${this.crdAccessToken}`;
     }
@@ -208,7 +225,6 @@ export class FhirService {
 }
 
 export const createFhirService = (serviceConfig?: Partial<FhirServiceConfig>) => {
-  // Map the app config to service config format
   const defaultConfig: FhirServiceConfig = {
     fhirEndpoint: config.FHIR_ENDPOINT,
     crdEndpoint: config.CRD_ENDPOINT,
@@ -216,7 +232,6 @@ export const createFhirService = (serviceConfig?: Partial<FhirServiceConfig>) =>
     crdAccessToken: config.CRD_ACCESS_TOKEN,
   };
   
-  // Merge with any provided configs
   const mergedConfig: FhirServiceConfig = {
     ...defaultConfig,
     ...serviceConfig,

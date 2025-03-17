@@ -7,6 +7,7 @@ import Hero from "@/components/Hero";
 import ConfigurationPanel from "@/components/ConfigurationPanel";
 import ExcelUploader from "@/components/ExcelUploader";
 import BulkResponseViewer from "@/components/BulkResponseViewer";
+import CodeMappingUploader, { CodeMapping } from "@/components/CodeMappingUploader";
 import { useToast } from "@/hooks/use-toast";
 import { createFhirService } from "@/lib/fhir-service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,9 +26,14 @@ const Index = () => {
   const [crdResponse, setCrdResponse] = useState<any>(null);
   const [bulkResponses, setBulkResponses] = useState<ProcessedResponse[]>([]);
   const [activeTab, setActiveTab] = useState<string>("form");
+  const [codeMappings, setCodeMappings] = useState<CodeMapping[]>([]);
 
   // Create FHIR service with config - this will now use the values from config.ts
   const fhirService = createFhirService();
+
+  const handleCodeMappingsLoaded = (mappings: CodeMapping[]) => {
+    setCodeMappings(mappings);
+  };
 
   const processServiceRequest = async (formData: PatientFormData) => {
     try {
@@ -51,13 +57,14 @@ const Index = () => {
         formData.serviceLocation
       );
 
-      // Create Condition
+      // Create Condition with diagnosis code
       const condition = await fhirService.createCondition(
         patient.id,
-        encounter.id
+        encounter.id,
+        formData.diagnosisCode
       );
 
-      // Create ServiceRequest
+      // Create ServiceRequest with CPT code
       const serviceRequest = await fhirService.createServiceRequest({
         patientId: patient.id,
         encounterId: encounter.id,
@@ -65,6 +72,8 @@ const Index = () => {
         providerId: formData.providerNpi,
         providerName: formData.providerName,
         location: formData.serviceLocation,
+        diagnosisCode: formData.diagnosisCode,
+        cptCode: formData.cptCode,
       });
 
       // Create CRD Order Sign
@@ -176,16 +185,21 @@ const Index = () => {
             onValueChange={setActiveTab} 
             className="w-full"
           >
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-4">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-5">
               <TabsTrigger value="form">Single Request</TabsTrigger>
               <TabsTrigger value="excel">Excel Upload</TabsTrigger>
+              <TabsTrigger value="mappings">Code Mappings</TabsTrigger>
               <TabsTrigger value="bulk">Bulk Results</TabsTrigger>
               <TabsTrigger value="config">Configuration</TabsTrigger>
             </TabsList>
 
             <TabsContent value="form" className="mt-6">
               <div className="grid gap-8">
-                <PatientForm onSubmit={handleSingleSubmit} isLoading={isLoading} />
+                <PatientForm 
+                  onSubmit={handleSingleSubmit} 
+                  isLoading={isLoading} 
+                  codeMappings={codeMappings}
+                />
 
                 {crdResponse && (
                   <ResponseViewer
@@ -198,6 +212,10 @@ const Index = () => {
 
             <TabsContent value="excel" className="mt-6">
               <ExcelUploader onProcess={handleBulkSubmit} isLoading={isLoading} />
+            </TabsContent>
+
+            <TabsContent value="mappings" className="mt-6">
+              <CodeMappingUploader onMappingsLoaded={handleCodeMappingsLoaded} />
             </TabsContent>
 
             <TabsContent value="bulk" className="mt-6">
