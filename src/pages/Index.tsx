@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import PatientForm from "@/components/PatientForm";
 import ResponseViewer from "@/components/ResponseViewer";
 import AnimatedContainer from "@/components/AnimatedContainer";
+import Hero from "@/components/Hero";
 import { useToast } from "@/hooks/use-toast";
 import { createFhirService } from "@/lib/fhir-service";
 
@@ -72,29 +73,32 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
-      <AnimatedContainer className="max-w-7xl mx-auto space-y-8">
-        <header className="text-center space-y-4">
-          <h1 className="text-4xl font-semibold tracking-tight">
-            FHIR Helper Hub
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Streamline your healthcare service requests with our FHIR-compliant system
-          </p>
-        </header>
+    <>
+      <Hero />
+      <div className="py-12 px-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+        <AnimatedContainer className="max-w-7xl mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl font-semibold tracking-tight">
+              Create Your Service Request
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              Fill out the form below to generate FHIR-compliant service requests
+            </p>
+          </div>
 
-        <div className="grid gap-8">
-          <PatientForm onSubmit={handleSubmit} isLoading={isLoading} />
+          <div className="grid gap-8">
+            <PatientForm onSubmit={handleSubmit} isLoading={isLoading} />
 
-          {crdResponse && (
-            <ResponseViewer
-              response={crdResponse}
-              title="CRD Order Sign Response"
-            />
-          )}
-        </div>
-      </AnimatedContainer>
-    </div>
+            {crdResponse && (
+              <ResponseViewer
+                response={crdResponse}
+                title="CRD Order Sign Response"
+              />
+            )}
+          </div>
+        </AnimatedContainer>
+      </div>
+    </>
   );
 };
 
