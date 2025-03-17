@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -42,12 +43,37 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const requiredFields = ['firstName', 'lastName', 'dateOfBirth', 'subscriberId', 'providerNpi', 'providerName', 'serviceLocation'];
-    const missingFields = requiredFields.filter(field => 
+    // Check specifically for the mandatory fields we're enforcing
+    const mandatoryFields = ['lastName', 'dateOfBirth', 'subscriberId'];
+    const missingFields = mandatoryFields.filter(field => 
       field === 'dateOfBirth' ? !formData[field as keyof PatientFormData] : !(formData[field as keyof PatientFormData] as string)
     );
     
     if (missingFields.length > 0) {
+      // Create a more specific error message that mentions the missing fields
+      const fieldLabels = {
+        lastName: 'Last Name',
+        dateOfBirth: 'Date of Birth',
+        subscriberId: 'Subscriber ID'
+      };
+      
+      const missingFieldLabels = missingFields.map(field => fieldLabels[field as keyof typeof fieldLabels]);
+      
+      toast({
+        title: "Required Fields Missing",
+        description: `Please complete the following required fields: ${missingFieldLabels.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Continue with other validations for remaining required fields
+    const otherRequiredFields = ['firstName', 'providerNpi', 'providerName', 'serviceLocation'];
+    const otherMissingFields = otherRequiredFields.filter(field => 
+      !(formData[field as keyof PatientFormData] as string)
+    );
+    
+    if (otherMissingFields.length > 0) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
@@ -95,15 +121,16 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="required">Last Name</Label>
+                <Label htmlFor="lastName" className="required font-bold">Last Name *</Label>
                 <div className="relative">
                   <Input
                     id="lastName"
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
-                    className="pl-10 glass-input"
+                    className="pl-10 glass-input border-2 border-primary-400"
                     placeholder="Enter last name"
+                    required
                   />
                   <UserCheck className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 </div>
@@ -126,13 +153,13 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dateOfBirth" className="required">Date of Birth</Label>
+              <Label htmlFor="dateOfBirth" className="required font-bold">Date of Birth *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full pl-10 justify-start text-left font-normal glass-input",
+                      "w-full pl-10 justify-start text-left font-normal glass-input border-2 border-primary-400",
                       !formData.dateOfBirth && "text-muted-foreground"
                     )}
                   >
@@ -160,15 +187,16 @@ const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subscriberId" className="required">Subscriber ID</Label>
+              <Label htmlFor="subscriberId" className="required font-bold">Subscriber ID *</Label>
               <div className="relative">
                 <Input
                   id="subscriberId"
                   name="subscriberId"
                   value={formData.subscriberId}
                   onChange={handleChange}
-                  className="pl-10 glass-input"
+                  className="pl-10 glass-input border-2 border-primary-400"
                   placeholder="Enter subscriber ID"
+                  required
                 />
                 <Database className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
