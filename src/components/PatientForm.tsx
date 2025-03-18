@@ -79,7 +79,7 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
       return;
     }
     
-    // Check if at least one provider information source is provided
+    // Check if either organization name OR practitioner information is provided
     const hasOrganization = !!formData.organizationName.trim();
     const hasPractitioner = !!(formData.practitionerFirstName.trim() && formData.practitionerLastName.trim());
     

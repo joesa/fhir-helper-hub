@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { FileSpreadsheet, Download, Upload, Table as TableIcon } from "lucide-re
 import { PatientFormData } from "@/types/patient";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 interface ExcelUploaderProps {
   onProcess: (selectedData: PatientFormData[]) => void;
@@ -16,6 +18,7 @@ interface ExcelUploaderProps {
 }
 
 const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
+  const { toast } = useToast();
   const [excelData, setExcelData] = useState<PatientFormData[]>([]);
   const [selectedRows, setSelectedRows] = useState<Record<number, boolean>>({});
   
@@ -123,9 +126,41 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
   const handleProcessSelected = () => {
     const selectedData = excelData.filter((_, index) => selectedRows[index]);
     if (selectedData.length === 0) {
-      alert("Please select at least one row to process");
+      toast({
+        title: "No Rows Selected",
+        description: "Please select at least one row to process",
+        variant: "destructive",
+      });
       return;
     }
+
+    // Validate each selected row
+    const invalidRows: number[] = [];
+    selectedData.forEach((data, index) => {
+      // Check for required NPI
+      if (!data.providerNpi) {
+        invalidRows.push(index + 1); // +1 for human-readable row number
+        return;
+      }
+      
+      // Check for organization or practitioner
+      const hasOrganization = !!data.organizationName?.trim();
+      const hasPractitioner = !!(data.practitionerFirstName?.trim() && data.practitionerLastName?.trim());
+      
+      if (!hasOrganization && !hasPractitioner) {
+        invalidRows.push(index + 1); // +1 for human-readable row number
+      }
+    });
+    
+    if (invalidRows.length > 0) {
+      toast({
+        title: "Invalid Data",
+        description: `Rows ${invalidRows.join(', ')} are missing either Organization Name OR both Practitioner First and Last Name.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     onProcess(selectedData);
   };
 
