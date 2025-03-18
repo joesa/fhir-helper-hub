@@ -53,7 +53,7 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
     e.preventDefault();
     
     // Check specifically for the mandatory fields we're enforcing
-    const mandatoryFields = ['lastName', 'dateOfBirth', 'subscriberId', 'diagnosisCode', 'cptCode'];
+    const mandatoryFields = ['lastName', 'dateOfBirth', 'subscriberId', 'diagnosisCode', 'cptCode', 'providerNpi'];
     const missingFields = mandatoryFields.filter(field => 
       field === 'dateOfBirth' ? !formData[field as keyof PatientFormData] : !(formData[field as keyof PatientFormData] as string)
     );
@@ -65,7 +65,8 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
         dateOfBirth: 'Date of Birth',
         subscriberId: 'Subscriber ID',
         diagnosisCode: 'Diagnosis Code (ICD-10)',
-        cptCode: 'Procedure Code (CPT)'
+        cptCode: 'Procedure Code (CPT)',
+        providerNpi: 'Provider NPI'
       };
       
       const missingFieldLabels = missingFields.map(field => fieldLabels[field as keyof typeof fieldLabels]);
@@ -81,12 +82,11 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
     // Check if at least one provider information source is provided
     const hasOrganization = !!formData.organizationName.trim();
     const hasPractitioner = !!(formData.practitionerFirstName.trim() && formData.practitionerLastName.trim());
-    const hasNpi = !!formData.providerNpi.trim();
     
-    if (!hasOrganization && (!hasPractitioner || !hasNpi)) {
+    if (!hasOrganization && !hasPractitioner) {
       toast({
         title: "Provider Information Required",
-        description: "Please provide either an Organization Name OR both Practitioner Name and NPI.",
+        description: "Please provide either an Organization Name OR both Practitioner First and Last Name.",
         variant: "destructive",
       });
       return;
@@ -300,15 +300,16 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="providerNpi" className="required">Provider NPI</Label>
+              <Label htmlFor="providerNpi" className="required font-bold">Provider NPI *</Label>
               <div className="relative">
                 <Input
                   id="providerNpi"
                   name="providerNpi"
                   value={formData.providerNpi}
                   onChange={handleChange}
-                  className="pl-10 glass-input"
+                  className="pl-10 glass-input border-2 border-primary-400"
                   placeholder="Enter provider NPI"
+                  required
                 />
                 <FileText className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>

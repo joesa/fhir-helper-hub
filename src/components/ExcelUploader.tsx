@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,6 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
   const [excelData, setExcelData] = useState<PatientFormData[]>([]);
   const [selectedRows, setSelectedRows] = useState<Record<number, boolean>>({});
   
-  // Example data for the format display
   const exampleData = [
     {
       firstName: "John",
@@ -63,19 +61,14 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
         const worksheet = workbook.Sheets[sheetName];
         const json = XLSX.utils.sheet_to_json<any>(worksheet);
         
-        // Transform the Excel data to match PatientFormData
         const formattedData = json.map((row: any) => {
-          // Parse date from Excel (Excel dates are stored as serial numbers)
           let dateOfBirth = null;
           if (row.dateOfBirth) {
             try {
-              // Handle different date formats
               if (typeof row.dateOfBirth === 'number') {
-                // Excel date (serial number)
                 dateOfBirth = XLSX.SSF.parse_date_code(row.dateOfBirth);
                 dateOfBirth = new Date(dateOfBirth.y, dateOfBirth.m - 1, dateOfBirth.d);
               } else if (typeof row.dateOfBirth === 'string') {
-                // Try to parse string date
                 dateOfBirth = new Date(row.dateOfBirth);
               }
             } catch (error) {
@@ -99,7 +92,6 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
         });
         
         setExcelData(formattedData);
-        // Reset selected rows
         setSelectedRows({});
       } catch (error) {
         console.error("Error parsing Excel file:", error);
@@ -118,10 +110,8 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
 
   const toggleSelectAll = () => {
     if (Object.keys(selectedRows).length === excelData.length) {
-      // Deselect all
       setSelectedRows({});
     } else {
-      // Select all
       const newSelectedRows: Record<number, boolean> = {};
       excelData.forEach((_, index) => {
         newSelectedRows[index] = true;
@@ -183,11 +173,10 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
           </Button>
         </div>
         
-        {/* Example File Format Section */}
         <div className="bg-muted/30 p-4 rounded-md border border-dashed">
           <div className="flex items-center gap-2 mb-3">
             <TableIcon className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-medium">Expected File Format</h3>
+            <h3 className="text-sm font-medium">Expected File Format <span className="text-xs text-red-500">(NPI is required)</span></h3>
           </div>
           <div className="rounded-md border overflow-x-auto">
             <Table>
@@ -198,7 +187,7 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
                   <TableHead>lastName</TableHead>
                   <TableHead>dateOfBirth</TableHead>
                   <TableHead>subscriberId</TableHead>
-                  <TableHead>providerNpi</TableHead>
+                  <TableHead className="font-bold">providerNpi*</TableHead>
                   <TableHead>organizationName</TableHead>
                   <TableHead>practitionerFirstName</TableHead>
                   <TableHead>practitionerLastName</TableHead>
@@ -214,7 +203,7 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
                     <TableCell>{row.lastName}</TableCell>
                     <TableCell>{row.dateOfBirth}</TableCell>
                     <TableCell>{row.subscriberId}</TableCell>
-                    <TableCell>{row.providerNpi}</TableCell>
+                    <TableCell className="font-semibold">{row.providerNpi}</TableCell>
                     <TableCell>{row.organizationName}</TableCell>
                     <TableCell>{row.practitionerFirstName}</TableCell>
                     <TableCell>{row.practitionerLastName}</TableCell>
@@ -244,7 +233,7 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
                   <TableHead>Name</TableHead>
                   <TableHead>Date of Birth</TableHead>
                   <TableHead>Subscriber ID</TableHead>
-                  <TableHead>Provider Info</TableHead>
+                  <TableHead>Provider Info (NPI*)</TableHead>
                   <TableHead>Codes</TableHead>
                 </TableRow>
               </TableHeader>
@@ -268,8 +257,8 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
                     <TableCell>{row.subscriberId}</TableCell>
                     <TableCell>
                       {row.organizationName ? 
-                        `${row.organizationName} (${row.providerNpi})` : 
-                        `${row.practitionerFirstName} ${row.practitionerLastName} (${row.providerNpi})`}
+                        `${row.organizationName} (${row.providerNpi || 'Missing NPI*'})` : 
+                        `${row.practitionerFirstName} ${row.practitionerLastName} (${row.providerNpi || 'Missing NPI*'})`}
                     </TableCell>
                     <TableCell>ICD: {row.diagnosisCode}, CPT: {row.cptCode}</TableCell>
                   </TableRow>
