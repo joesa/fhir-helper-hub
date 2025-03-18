@@ -43,34 +43,63 @@ const Index = () => {
 
   const processServiceRequest = async (formData: PatientFormData) => {
     try {
-      // Construct full name from components
-      const fullName = [
-        formData.firstName,
-        formData.middleName,
-        formData.lastName
-      ].filter(Boolean).join(" ");
-
-      // Create Patient with name components and DOB
-      const patient = await fhirService.createPatient(
-        fullName,
-        formData.subscriberId,
-        formData.dateOfBirth
-      );
-
+      // Get the diagnosis display if available from mappings
+      const diagnosisMapping = icd10Mappings.find(mapping => mapping.code === formData.diagnosisCode);
+      const diagnosisDisplay = diagnosisMapping?.description;
+      
+      // Get the CPT display if available from mappings
+      const cptMapping = cptMappings.find(mapping => mapping.code === formData.cptCode);
+      const cptDisplay = cptMapping?.description;
+      
+      // Retrieve patient by subscriberId
+      let patient;
+      try {
+        // Try to get an existing patient
+        patient = await fhirService.getPatientByIdentifier(formData.subscriberId);
+        console.log("Found existing patient:", patient);
+      } catch (error) {
+        // If not found, create a new patient
+        console.log("Creating new patient...");
+        
+        // Construct full name from components
+        const fullName = [
+          formData.firstName,
+          formData.middleName,
+          formData.lastName
+        ].filter(Boolean).join(" ");
+        
+        patient = await fhirService.createPatient(
+          fullName,
+          formData.subscriberId,
+          formData.dateOfBirth
+        );
+      }
+      
+      // Retrieve or search for Organization by name
+      const organization = await fhirService.getOrganizationByName(formData.providerName);
+      
+      // Retrieve or search for Location by name
+      const location = await fhirService.getLocationByName(formData.serviceLocation);
+      
       // Create Encounter
       const encounter = await fhirService.createEncounter(
         patient.id,
-        formData.serviceLocation
+        location.id,
+        organization.id
       );
-
-      // Create Condition with diagnosis code
+      
+      // Create Condition
       const condition = await fhirService.createCondition(
         patient.id,
         encounter.id,
-        formData.diagnosisCode
+        formData.diagnosisCode,
+        diagnosisDisplay
       );
-
-      // Create ServiceRequest with CPT code
+      
+      // Get Coverage for the patient
+      const coverage = await fhirService.getCoverageByPatient(patient.id);
+      
+      // Create ServiceRequest
       const serviceRequest = await fhirService.createServiceRequest({
         patientId: patient.id,
         encounterId: encounter.id,
@@ -78,15 +107,29 @@ const Index = () => {
         providerId: formData.providerNpi,
         providerName: formData.providerName,
         location: formData.serviceLocation,
+        organizationId: organization.id,
+        locationId: location.id,
+        coverageId: coverage.id,
         diagnosisCode: formData.diagnosisCode,
+        diagnosisDisplay: diagnosisDisplay,
         cptCode: formData.cptCode,
+        cptDisplay: cptDisplay
       });
-
-      // Create CRD Order Sign
+      
+      // Get patient resource (full object)
+      const patientResource = await fhirService.getResourceById("Patient", patient.id);
+      
+      // Get performer bundle
+      const performerBundle = await fhirService.getPerformerBundle(serviceRequest.id);
+      
+      // Create CRD Order Sign with all the gathered resources
       const response = await fhirService.createCrdOrderSign(
-        serviceRequest,
-        patient,
-        condition
+        patient.id,
+        encounter.id,
+        serviceRequest.id,
+        patientResource,
+        coverage,
+        performerBundle
       );
 
       return {
@@ -97,7 +140,7 @@ const Index = () => {
       console.error("Error processing request for", formData, error);
       return {
         success: false,
-        response: { error: "Failed to process request" }
+        response: { error: "Failed to process request", details: (error as Error).message }
       };
     }
   };
