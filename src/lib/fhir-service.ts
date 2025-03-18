@@ -14,9 +14,11 @@ interface ServiceRequestPayload {
   encounterId: string;
   conditionId: string;
   providerId: string;
-  providerName: string;
-  location: string;
-  organizationId: string;
+  practitionerId?: string;
+  providerType: 'organization' | 'practitioner';
+  organizationName?: string;
+  practitionerFirstName?: string;
+  practitionerLastName?: string;
   locationId: string;
   coverageId: string;
   diagnosisCode?: string;
@@ -84,6 +86,16 @@ export class FhirService {
     return result.entry[0].resource;
   }
 
+  async getPractitionerByNpi(npi: string) {
+    const result = await this.request(`/Practitioner?identifier=${encodeURIComponent(npi)}`);
+    
+    if (!result.entry || result.entry.length === 0) {
+      throw new Error(`Practitioner not found with NPI: ${npi}`);
+    }
+    
+    return result.entry[0].resource;
+  }
+
   async getLocationByName(locationName: string) {
     const result = await this.request(`/Location?name=${encodeURIComponent(locationName)}`);
     
@@ -108,7 +120,7 @@ export class FhirService {
     return this.request(`/${resourceType}/${id}`);
   }
 
-  async createEncounter(patientId: string, locationId: string, organizationId: string) {
+  async createEncounter(patientId: string, locationId: string, providerId: string, providerType: 'organization' | 'practitioner') {
     const currentDateTime = new Date().toISOString();
     
     const encounter = {
@@ -166,7 +178,9 @@ export class FhirService {
         }
       ],
       serviceProvider: {
-        reference: `Organization/${organizationId}`
+        reference: providerType === 'organization' 
+          ? `Organization/${providerId}` 
+          : `Practitioner/${providerId}`
       }
     };
 
@@ -332,7 +346,9 @@ export class FhirService {
       authoredOn: formattedCurrentDate,
       performer: [
         {
-          reference: `Organization/${payload.organizationId}`
+          reference: payload.providerType === 'organization'
+            ? `Organization/${payload.providerId}`
+            : `Practitioner/${payload.providerId}`
         }
       ],
       reasonReference: [

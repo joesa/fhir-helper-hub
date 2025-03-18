@@ -29,8 +29,9 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
       dateOfBirth: "1990-01-01",
       subscriberId: "SUB12345",
       providerNpi: "1234567890",
-      providerName: "Dr. Smith Medical Group",
-      serviceLocation: "Main Hospital",
+      organizationName: "Dr. Smith Medical Group",
+      practitionerFirstName: "James",
+      practitionerLastName: "Smith",
       diagnosisCode: "J45.909",
       cptCode: "99213"
     },
@@ -41,8 +42,9 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
       dateOfBirth: "1985-05-15",
       subscriberId: "SUB67890",
       providerNpi: "0987654321",
-      providerName: "City Medical Center",
-      serviceLocation: "Downtown Clinic",
+      organizationName: "City Medical Center",
+      practitionerFirstName: "",
+      practitionerLastName: "",
       diagnosisCode: "E11.9",
       cptCode: "93000"
     }
@@ -88,8 +90,9 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
             dateOfBirth: dateOfBirth || undefined,
             subscriberId: row.subscriberId || "",
             providerNpi: row.providerNpi || "",
-            providerName: row.providerName || "",
-            serviceLocation: row.serviceLocation || "",
+            organizationName: row.organizationName || "",
+            practitionerFirstName: row.practitionerFirstName || "",
+            practitionerLastName: row.practitionerLastName || "",
             diagnosisCode: row.diagnosisCode || "",
             cptCode: row.cptCode || "",
           };
@@ -137,33 +140,6 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
   };
 
   const downloadExampleTemplate = () => {
-    const exampleData = [
-      {
-        firstName: "John",
-        middleName: "",
-        lastName: "Doe",
-        dateOfBirth: "1990-01-01",
-        subscriberId: "SUB12345",
-        providerNpi: "1234567890",
-        providerName: "Dr. Smith Medical Group",
-        serviceLocation: "Main Hospital",
-        diagnosisCode: "J45.909",
-        cptCode: "99213"
-      },
-      {
-        firstName: "Jane",
-        middleName: "M",
-        lastName: "Smith",
-        dateOfBirth: "1985-05-15",
-        subscriberId: "SUB67890",
-        providerNpi: "0987654321",
-        providerName: "City Medical Center",
-        serviceLocation: "Downtown Clinic",
-        diagnosisCode: "E11.9",
-        cptCode: "93000"
-      }
-    ];
-    
     const worksheet = XLSX.utils.json_to_sheet(exampleData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Patients");
@@ -223,8 +199,9 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
                   <TableHead>dateOfBirth</TableHead>
                   <TableHead>subscriberId</TableHead>
                   <TableHead>providerNpi</TableHead>
-                  <TableHead>providerName</TableHead>
-                  <TableHead>serviceLocation</TableHead>
+                  <TableHead>organizationName</TableHead>
+                  <TableHead>practitionerFirstName</TableHead>
+                  <TableHead>practitionerLastName</TableHead>
                   <TableHead>diagnosisCode</TableHead>
                   <TableHead>cptCode</TableHead>
                 </TableRow>
@@ -238,8 +215,9 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
                     <TableCell>{row.dateOfBirth}</TableCell>
                     <TableCell>{row.subscriberId}</TableCell>
                     <TableCell>{row.providerNpi}</TableCell>
-                    <TableCell>{row.providerName}</TableCell>
-                    <TableCell>{row.serviceLocation}</TableCell>
+                    <TableCell>{row.organizationName}</TableCell>
+                    <TableCell>{row.practitionerFirstName}</TableCell>
+                    <TableCell>{row.practitionerLastName}</TableCell>
                     <TableCell>{row.diagnosisCode}</TableCell>
                     <TableCell>{row.cptCode}</TableCell>
                   </TableRow>
@@ -288,7 +266,11 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
                       {row.dateOfBirth ? format(new Date(row.dateOfBirth), "PPP") : "N/A"}
                     </TableCell>
                     <TableCell>{row.subscriberId}</TableCell>
-                    <TableCell>{row.providerName} ({row.providerNpi})</TableCell>
+                    <TableCell>
+                      {row.organizationName ? 
+                        `${row.organizationName} (${row.providerNpi})` : 
+                        `${row.practitionerFirstName} ${row.practitionerLastName} (${row.providerNpi})`}
+                    </TableCell>
                     <TableCell>ICD: {row.diagnosisCode}, CPT: {row.cptCode}</TableCell>
                   </TableRow>
                 ))}

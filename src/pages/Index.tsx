@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import PatientForm from "@/components/PatientForm";
 import ResponseViewer from "@/components/ResponseViewer";
@@ -54,17 +55,39 @@ const Index = () => {
       const patient = await fhirService.getPatientByIdentifier(formData.subscriberId);
       console.log("Found patient:", patient);
       
-      // Retrieve or search for Organization by name
-      const organization = await fhirService.getOrganizationByName(formData.providerName);
+      // Determine whether to use Organization or Practitioner
+      let providerType: 'organization' | 'practitioner' = 'organization';
+      let providerId: string;
+      let locationId: string;
       
-      // Retrieve or search for Location by name
-      const location = await fhirService.getLocationByName(formData.serviceLocation);
+      // Prioritize Organization if provided
+      if (formData.organizationName) {
+        const organization = await fhirService.getOrganizationByName(formData.organizationName);
+        providerId = organization.id;
+        providerType = 'organization';
+        
+        // Get Location with the same name as Organization for now
+        const location = await fhirService.getLocationByName(formData.organizationName);
+        locationId = location.id;
+      } else {
+        // Use Practitioner if no organization name provided
+        const practitioner = await fhirService.getPractitionerByNpi(formData.providerNpi);
+        providerId = practitioner.id;
+        providerType = 'practitioner';
+        
+        // For simplicity, use a default location or one associated with practitioner
+        // This is a simplification and may need to be improved
+        const practitionerFullName = `${formData.practitionerFirstName} ${formData.practitionerLastName}`;
+        const location = await fhirService.getLocationByName(practitionerFullName);
+        locationId = location.id;
+      }
       
       // Create Encounter
       const encounter = await fhirService.createEncounter(
         patient.id,
-        location.id,
-        organization.id
+        locationId,
+        providerId,
+        providerType
       );
       
       // Create Condition
@@ -83,11 +106,12 @@ const Index = () => {
         patientId: patient.id,
         encounterId: encounter.id,
         conditionId: condition.id,
-        providerId: formData.providerNpi,
-        providerName: formData.providerName,
-        location: formData.serviceLocation,
-        organizationId: organization.id,
-        locationId: location.id,
+        providerId: providerId,
+        providerType: providerType,
+        organizationName: formData.organizationName,
+        practitionerFirstName: formData.practitionerFirstName,
+        practitionerLastName: formData.practitionerLastName,
+        locationId: locationId,
         coverageId: coverage.id,
         diagnosisCode: formData.diagnosisCode,
         diagnosisDisplay: diagnosisDisplay,

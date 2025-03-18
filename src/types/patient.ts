@@ -6,8 +6,9 @@ export interface PatientFormData {
   dateOfBirth: Date | undefined;
   subscriberId: string;
   providerNpi: string;
-  providerName: string;
-  serviceLocation: string;
+  organizationName: string;
+  practitionerFirstName: string;
+  practitionerLastName: string;
   diagnosisCode: string;
   cptCode: string;
 }

@@ -1,10 +1,11 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Database, FileText, Plus, UserCheck, Building, Briefcase, Hospital, Stethoscope, Activity } from "lucide-react";
+import { User, Database, FileText, UserCheck, Building, Briefcase, Stethoscope, Activity } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { PatientFormData } from "@/types/patient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,8 +29,9 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
     dateOfBirth: undefined,
     subscriberId: "",
     providerNpi: "",
-    providerName: "",
-    serviceLocation: "",
+    organizationName: "",
+    practitionerFirstName: "",
+    practitionerLastName: "",
     diagnosisCode: "",
     cptCode: "",
   });
@@ -76,8 +78,22 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
       return;
     }
     
+    // Check if at least one provider information source is provided
+    const hasOrganization = !!formData.organizationName.trim();
+    const hasPractitioner = !!(formData.practitionerFirstName.trim() && formData.practitionerLastName.trim());
+    const hasNpi = !!formData.providerNpi.trim();
+    
+    if (!hasOrganization && (!hasPractitioner || !hasNpi)) {
+      toast({
+        title: "Provider Information Required",
+        description: "Please provide either an Organization Name OR both Practitioner Name and NPI.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Continue with other validations for remaining required fields
-    const otherRequiredFields = ['firstName', 'providerNpi', 'providerName', 'serviceLocation'];
+    const otherRequiredFields = ['firstName'];
     const otherMissingFields = otherRequiredFields.filter(field => 
       !(formData[field as keyof PatientFormData] as string)
     );
@@ -108,7 +124,7 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Hospital className="h-5 w-5 text-primary" />
+              <User className="h-5 w-5 text-primary" />
               <h3 className="text-lg font-medium">Patient Information</h3>
             </div>
             <Separator className="my-2" />
@@ -228,21 +244,58 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
             <div className="flex items-center space-x-2">
               <Briefcase className="h-5 w-5 text-primary" />
               <h3 className="text-lg font-medium">Provider Information</h3>
+              <span className="text-sm text-gray-500">(Provide either Organization OR Practitioner)</span>
             </div>
             <Separator className="my-2" />
 
             <div className="space-y-2">
-              <Label htmlFor="providerName" className="required">Practitioner/Provider Organization Name</Label>
+              <Label htmlFor="organizationName">Organization Name</Label>
               <div className="relative">
                 <Input
-                  id="providerName"
-                  name="providerName"
-                  value={formData.providerName}
+                  id="organizationName"
+                  name="organizationName"
+                  value={formData.organizationName}
                   onChange={handleChange}
                   className="pl-10 glass-input"
-                  placeholder="Enter provider name or organization"
+                  placeholder="Enter organization name"
                 />
                 <Building className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+            
+            <div className="space-y-1 pt-2">
+              <Label className="text-sm text-gray-600">OR</Label>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="practitionerFirstName">Practitioner First Name</Label>
+                <div className="relative">
+                  <Input
+                    id="practitionerFirstName"
+                    name="practitionerFirstName"
+                    value={formData.practitionerFirstName}
+                    onChange={handleChange}
+                    className="pl-10 glass-input"
+                    placeholder="Enter practitioner first name"
+                  />
+                  <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="practitionerLastName">Practitioner Last Name</Label>
+                <div className="relative">
+                  <Input
+                    id="practitionerLastName"
+                    name="practitionerLastName"
+                    value={formData.practitionerLastName}
+                    onChange={handleChange}
+                    className="pl-10 glass-input"
+                    placeholder="Enter practitioner last name"
+                  />
+                  <UserCheck className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                </div>
               </div>
             </div>
             
@@ -258,21 +311,6 @@ const PatientForm = ({ onSubmit, isLoading, icd10Mappings = [], cptMappings = []
                   placeholder="Enter provider NPI"
                 />
                 <FileText className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="serviceLocation" className="required">Service Location</Label>
-              <div className="relative">
-                <Input
-                  id="serviceLocation"
-                  name="serviceLocation"
-                  value={formData.serviceLocation}
-                  onChange={handleChange}
-                  className="pl-10 glass-input"
-                  placeholder="Enter service location"
-                />
-                <Plus className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
             </div>
 
