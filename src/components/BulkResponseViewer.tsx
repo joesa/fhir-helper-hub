@@ -43,6 +43,18 @@ const BulkResponseViewer = ({ responses }: BulkResponseViewerProps) => {
           item.patientData.lastName
         ].filter(Boolean).join(" ");
         
+        // Determine provider info based on whether organization or practitioner info is available
+        let providerInfo = "No provider information";
+        if (item.patientData.organizationName) {
+          providerInfo = `${item.patientData.organizationName} (${item.patientData.providerNpi || 'No NPI'})`;
+        } else if (item.patientData.practitionerFirstName || item.patientData.practitionerLastName) {
+          const practitionerName = [
+            item.patientData.practitionerFirstName,
+            item.patientData.practitionerLastName
+          ].filter(Boolean).join(" ");
+          providerInfo = `${practitionerName} (${item.patientData.providerNpi || 'No NPI'})`;
+        }
+        
         return (
           <Collapsible
             key={index}
@@ -64,8 +76,7 @@ const BulkResponseViewer = ({ responses }: BulkResponseViewerProps) => {
                       Patient: {patientName}
                     </span>
                     <span className="text-sm text-gray-500">
-                      Provider: {item.patientData.providerName} • 
-                      Location: {item.patientData.serviceLocation}
+                      Provider: {providerInfo}
                     </span>
                   </div>
                   <div className="flex items-center">
