@@ -108,28 +108,6 @@ export class FhirService {
     return this.request(`/${resourceType}/${id}`);
   }
 
-  async createPatient(name: string, subscriberId: string, dateOfBirth?: Date) {
-    const nameParts = name.split(' ');
-    const familyName = nameParts.pop() || '';
-    const givenNames = nameParts.length > 0 ? nameParts : [''];
-    
-    const patient = {
-      resourceType: "Patient",
-      name: [{
-        use: "official",
-        family: familyName,
-        given: givenNames
-      }],
-      identifier: [{ value: subscriberId }],
-      birthDate: dateOfBirth ? dateOfBirth.toISOString().slice(0, 10) : undefined,
-    };
-
-    return this.request("/Patient", {
-      method: "POST",
-      body: JSON.stringify(patient),
-    });
-  }
-
   async createEncounter(patientId: string, locationId: string, organizationId: string) {
     const currentDateTime = new Date().toISOString();
     

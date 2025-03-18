@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import PatientForm from "@/components/PatientForm";
 import ResponseViewer from "@/components/ResponseViewer";
@@ -51,29 +50,9 @@ const Index = () => {
       const cptMapping = cptMappings.find(mapping => mapping.code === formData.cptCode);
       const cptDisplay = cptMapping?.description;
       
-      // Retrieve patient by subscriberId
-      let patient;
-      try {
-        // Try to get an existing patient
-        patient = await fhirService.getPatientByIdentifier(formData.subscriberId);
-        console.log("Found existing patient:", patient);
-      } catch (error) {
-        // If not found, create a new patient
-        console.log("Creating new patient...");
-        
-        // Construct full name from components
-        const fullName = [
-          formData.firstName,
-          formData.middleName,
-          formData.lastName
-        ].filter(Boolean).join(" ");
-        
-        patient = await fhirService.createPatient(
-          fullName,
-          formData.subscriberId,
-          formData.dateOfBirth
-        );
-      }
+      // Retrieve patient by subscriberId - will throw error if not found
+      const patient = await fhirService.getPatientByIdentifier(formData.subscriberId);
+      console.log("Found patient:", patient);
       
       // Retrieve or search for Organization by name
       const organization = await fhirService.getOrganizationByName(formData.providerName);
