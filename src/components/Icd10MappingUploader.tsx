@@ -1,6 +1,5 @@
-
 import React, { useState } from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +17,7 @@ interface Icd10MappingProps {
   onMappingsLoaded: (mappings: Icd10Mapping[]) => void;
 }
 
-const Icd10MappingUploader: React.FC<Icd10MappingProps> = ({ onMappingsLoaded }) => {
+const Icd10MappingUploader = ({ onMappingsLoaded }: Icd10MappingProps) => {
   const { toast } = useToast();
   const [mappings, setMappings] = useState<Icd10Mapping[]>([]);
 
@@ -42,23 +41,48 @@ const Icd10MappingUploader: React.FC<Icd10MappingProps> = ({ onMappingsLoaded })
     }
   ];
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json<any>(worksheet);
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(event.target?.result as ArrayBuffer);
+        
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) {
+          throw new Error("No worksheet found in the Excel file");
+        }
+        
+        const json: any[] = [];
+        const headers: string[] = [];
+        
+        // Extract headers from the first row
+        worksheet.getRow(1).eachCell((cell, colNumber) => {
+          headers[colNumber - 1] = cell.value?.toString() || '';
+        });
+        
+        // Extract data rows
+        worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return; // Skip header row
+          
+          const rowData: any = {};
+          row.eachCell((cell, colNumber) => {
+            const header = headers[colNumber - 1];
+            if (header) {
+              rowData[header] = cell.value;
+            }
+          });
+          
+          json.push(rowData);
+        });
         
         // Transform the Excel data to match Icd10Mapping
         const formattedData = json.map((row: any) => ({
-          code: row.code || "",
-          description: row.description || "",
+          code: row.code?.toString() || "",
+          description: row.description?.toString() || "",
         }));
         
         setMappings(formattedData);
@@ -80,12 +104,39 @@ const Icd10MappingUploader: React.FC<Icd10MappingProps> = ({ onMappingsLoaded })
     reader.readAsArrayBuffer(file);
   };
 
-  const downloadTemplate = () => {
-    const worksheet = XLSX.utils.json_to_sheet(exampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "ICD-10 Codes");
+  const downloadTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('ICD-10 Codes');
     
-    XLSX.writeFile(workbook, "icd10_codes_template.xlsx");
+    // Add column headers
+    worksheet.columns = [
+      { header: 'code', key: 'code', width: 15 },
+      { header: 'description', key: 'description', width: 50 }
+    ];
+    
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+    
+    // Add example data
+    exampleData.forEach(data => {
+      worksheet.addRow(data);
+    });
+    
+    // Generate Excel file
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    // Create a blob from the buffer
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    // Create a download link and trigger click
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'icd10_codes_template.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   return (

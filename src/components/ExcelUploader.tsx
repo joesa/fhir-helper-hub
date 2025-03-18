@@ -1,6 +1,5 @@
-
 import React, { useState } from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,28 +50,68 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
     }
   ];
   
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json<any>(worksheet);
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(event.target?.result as ArrayBuffer);
+        
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) {
+          throw new Error("No worksheet found in the Excel file");
+        }
+        
+        const json: any[] = [];
+        const headers: string[] = [];
+        
+        // Extract headers from the first row
+        worksheet.getRow(1).eachCell((cell, colNumber) => {
+          headers[colNumber - 1] = cell.value?.toString() || '';
+        });
+        
+        // Extract data rows
+        worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return; // Skip header row
+          
+          const rowData: any = {};
+          row.eachCell((cell, colNumber) => {
+            const header = headers[colNumber - 1];
+            if (header) {
+              rowData[header] = cell.value;
+            }
+          });
+          
+          json.push(rowData);
+        });
         
         const formattedData = json.map((row: any) => {
           let dateOfBirth = null;
           if (row.dateOfBirth) {
             try {
+              // Handle Excel date (number)
               if (typeof row.dateOfBirth === 'number') {
-                dateOfBirth = XLSX.SSF.parse_date_code(row.dateOfBirth);
-                dateOfBirth = new Date(dateOfBirth.y, dateOfBirth.m - 1, dateOfBirth.d);
-              } else if (typeof row.dateOfBirth === 'string') {
+                // Excel dates are number of days since 1/1/1900
+                // JavaScript dates are in milliseconds since 1/1/1970
+                // Convert Excel date to JavaScript date
+                const excelEpoch = new Date(1899, 11, 30);  // Dec 30, 1899
+                const days = row.dateOfBirth;
+                dateOfBirth = new Date(excelEpoch.getTime() + (days * 24 * 60 * 60 * 1000));
+              } 
+              // Handle date object from ExcelJS
+              else if (row.dateOfBirth instanceof Date) {
+                dateOfBirth = row.dateOfBirth;
+              }
+              // Handle string date
+              else if (typeof row.dateOfBirth === 'string') {
                 dateOfBirth = new Date(row.dateOfBirth);
+              }
+              // Handle ExcelJS date results
+              else if (row.dateOfBirth && typeof row.dateOfBirth === 'object' && row.dateOfBirth.result) {
+                dateOfBirth = new Date(row.dateOfBirth.result);
               }
             } catch (error) {
               console.error("Error parsing date:", error);
@@ -98,7 +137,11 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
         setSelectedRows({});
       } catch (error) {
         console.error("Error parsing Excel file:", error);
-        alert("Error parsing Excel file. Please check the format.");
+        toast({
+          title: "Error",
+          description: "Error parsing Excel file. Please check the format.",
+          variant: "destructive",
+        });
       }
     };
     reader.readAsArrayBuffer(file);
@@ -164,12 +207,48 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
     onProcess(selectedData);
   };
 
-  const downloadExampleTemplate = () => {
-    const worksheet = XLSX.utils.json_to_sheet(exampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Patients");
+  const downloadExampleTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Patients');
     
-    XLSX.writeFile(workbook, "patient_template.xlsx");
+    // Add column headers
+    worksheet.columns = [
+      { header: 'firstName', key: 'firstName', width: 15 },
+      { header: 'middleName', key: 'middleName', width: 15 },
+      { header: 'lastName', key: 'lastName', width: 15 },
+      { header: 'dateOfBirth', key: 'dateOfBirth', width: 15 },
+      { header: 'subscriberId', key: 'subscriberId', width: 15 },
+      { header: 'providerNpi', key: 'providerNpi', width: 15 },
+      { header: 'organizationName', key: 'organizationName', width: 25 },
+      { header: 'practitionerFirstName', key: 'practitionerFirstName', width: 20 },
+      { header: 'practitionerLastName', key: 'practitionerLastName', width: 20 },
+      { header: 'diagnosisCode', key: 'diagnosisCode', width: 15 },
+      { header: 'cptCode', key: 'cptCode', width: 15 }
+    ];
+    
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+    
+    // Add example data
+    exampleData.forEach(data => {
+      worksheet.addRow(data);
+    });
+    
+    // Generate Excel file
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    // Create a blob from the buffer
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    // Create a download link and trigger click
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'patient_template.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   return (
@@ -251,55 +330,68 @@ const ExcelUploader = ({ onProcess, isLoading }: ExcelUploaderProps) => {
           </div>
         </div>
         
-        <Separator className="my-4" />
-        
         {excelData.length > 0 && (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox 
-                      checked={Object.keys(selectedRows).length > 0 && 
-                              Object.keys(selectedRows).length === excelData.length}
-                      onCheckedChange={toggleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Date of Birth</TableHead>
-                  <TableHead>Subscriber ID</TableHead>
-                  <TableHead>Provider Info (NPI*)</TableHead>
-                  <TableHead>Codes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {excelData.map((row, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Checkbox 
-                        checked={selectedRows[index] || false}
-                        onCheckedChange={() => toggleSelectRow(index)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {[row.firstName, row.middleName, row.lastName]
-                        .filter(Boolean)
-                        .join(" ")}
-                    </TableCell>
-                    <TableCell>
-                      {row.dateOfBirth ? format(new Date(row.dateOfBirth), "PPP") : "N/A"}
-                    </TableCell>
-                    <TableCell>{row.subscriberId}</TableCell>
-                    <TableCell>
-                      {row.organizationName ? 
-                        `${row.organizationName} (${row.providerNpi || 'Missing NPI*'})` : 
-                        `${row.practitionerFirstName} ${row.practitionerLastName} (${row.providerNpi || 'Missing NPI*'})`}
-                    </TableCell>
-                    <TableCell>ICD: {row.diagnosisCode}, CPT: {row.cptCode}</TableCell>
+          <div className="space-y-2">
+            <Separator />
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">Uploaded Data</h3>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="select-all"
+                  checked={excelData.length > 0 && Object.keys(selectedRows).length === excelData.length}
+                  onCheckedChange={toggleSelectAll}
+                />
+                <label htmlFor="select-all" className="text-xs cursor-pointer">
+                  Select All
+                </label>
+              </div>
+            </div>
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>DOB</TableHead>
+                    <TableHead>Subscriber ID</TableHead>
+                    <TableHead>Provider NPI</TableHead>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Practitioner</TableHead>
+                    <TableHead>Diagnosis Code</TableHead>
+                    <TableHead>CPT Code</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {excelData.map((row, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={!!selectedRows[index]}
+                          onCheckedChange={() => toggleSelectRow(index)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {`${row.firstName} ${row.middleName ? row.middleName + ' ' : ''}${row.lastName}`.trim()}
+                      </TableCell>
+                      <TableCell>
+                        {row.dateOfBirth ? format(row.dateOfBirth, 'MM/dd/yyyy') : '-'}
+                      </TableCell>
+                      <TableCell>{row.subscriberId || '-'}</TableCell>
+                      <TableCell>{row.providerNpi || '-'}</TableCell>
+                      <TableCell>{row.organizationName || '-'}</TableCell>
+                      <TableCell>
+                        {row.practitionerFirstName && row.practitionerLastName 
+                          ? `${row.practitionerFirstName} ${row.practitionerLastName}` 
+                          : '-'
+                        }
+                      </TableCell>
+                      <TableCell>{row.diagnosisCode || '-'}</TableCell>
+                      <TableCell>{row.cptCode || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </CardContent>

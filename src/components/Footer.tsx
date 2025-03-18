@@ -56,7 +56,7 @@ const Footer = () => {
         
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800 flex justify-center">
           <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-            Built with <Heart className="h-4 w-4 mx-1 text-red-500" /> © 2023
+            Exchange Manager © 2025
           </p>
         </div>
       </div>

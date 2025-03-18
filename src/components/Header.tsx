@@ -28,15 +28,6 @@ const Header = () => {
               </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <a 
-                href="https://github.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center px-4 py-2 text-sm font-medium hover:text-primary transition-colors"
-              >
-                <Github className="mr-2 h-4 w-4" />
-                GitHub
-              </a>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
